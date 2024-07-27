@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score
 import json
 import logging
+from dvclive import Live
+import yaml
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -83,6 +85,20 @@ def main():
         metrics_dict = evaluate_model(model, x, y)
         save_metrics(metrics_dict, save_metrics_location)
 
+        with open("params.yaml","r") as file:
+            params = yaml.safe_load((file))
+
+        # Log metrics and parameters using dvclive
+        with Live(save_dvc_exp=True) as live:
+            live.log_metric('accuracy', metrics_dict['accuracy'])
+            live.log_metric('precision', metrics_dict['precision'])
+            live.log_metric('recall', metrics_dict['recall'])
+            live.log_metric('auc', metrics_dict['auc'])
+
+            for param, value in params.items():
+                for key, value in value.items():
+                    live.log_param(f'{param}_{key}', value)
+
         logging.info("Main function completed successfully.")
     except Exception as e:
         logging.error(f"Error in main function: {e}")
@@ -90,7 +106,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 '''import pandas as pd
 import sys
